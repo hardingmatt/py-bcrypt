@@ -41,7 +41,7 @@ cost increases as 2**log_rounds.
 # You can have up to 2^31 rounds which should be enough for some
 # time to come.
 
-import blowfish
+from . import blowfish
 import os
 
 BCRYPT_VERSION = '2'
@@ -119,9 +119,9 @@ def hashpw(key, salt):
     csalt = decode_base64(csalt)
     
     if minor >= 'a':
-        key += '\0'
+        key += b'\0'
         
-    key = [ord(ch) for ch in key]
+    key = [ord(ch) for ch in key.decode('latin1')]
     state = blowfish.initstate()
     # Setting up S-Boxes and Subkeys 
     blowfish.expandstate(state, csalt, key)
@@ -135,14 +135,14 @@ def hashpw(key, salt):
     # This can be precomputed later 
     j = 0;
     cdata = [None] * BCRYPT_BLOCKS
-    for i in xrange(BCRYPT_BLOCKS):
+    for i in range(BCRYPT_BLOCKS):
         cdata[i], j = blowfish.stream2word(ciphertext, j)
 
     # Now do the encryption 
-    for _ in xrange(64):
+    for _ in range(64):
         blowfish.pybc_blf_enc(state, cdata, BCRYPT_BLOCKS / 2)
 
-    for i in xrange(BCRYPT_BLOCKS):
+    for i in range(BCRYPT_BLOCKS):
         ciphertext[4 * i + 3] = cdata[i] & 0xff
         cdata[i] = cdata[i] >> 8
         ciphertext[4 * i + 2] = cdata[i] & 0xff
@@ -154,7 +154,7 @@ def hashpw(key, salt):
     encrypted = ''
     encrypted += '$'
     encrypted += str(BCRYPT_VERSION)
-    if minor > 0:
+    if minor != 0:
         encrypted += minor
         
     encrypted += '$'
@@ -170,7 +170,7 @@ def gensalt(log_rounds = 1):
     """Generate a random text salt for use with hashpw(). "log_rounds"
     defines the complexity of the hashing, increasing the cost as
     2**log_rounds."""
-    return _encode_salt([ord(ch) for ch in os.urandom(16)], min(max(log_rounds, 1), 31))
+    return _encode_salt([ord(ch) for ch in os.urandom(16).decode('latin1')], min(max(log_rounds, 1), 31))
 
 
 Base64Code = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
